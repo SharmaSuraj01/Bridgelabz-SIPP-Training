@@ -75,8 +75,8 @@ class PartTimeEmployee extends Employee {
 public class EmployeeManagementSystem {
     public static void main(String[] args) {
         List<Employee> employees = Arrays.asList(
-            new FullTimeEmployee(1, "John", 5000, 45),
-            new PartTimeEmployee(2, "Jane", 0, 20, 25)
+            new FullTimeEmployee(1, "Suraj ", 5000, 45),
+            new PartTimeEmployee(2, "sharma", 0, 20, 25)
         );
         
         employees.get(0).assignDepartment("IT");
