@@ -1,0 +1,54 @@
+package Stacks;
+import java.util.Stack;
+
+class MyQueue {
+    Stack<Integer> stack1; // for enqueue
+    Stack<Integer> stack2; // for dequeue
+    
+    public MyQueue() {
+        stack1 = new Stack<>();
+        stack2 = new Stack<>();
+    }
+    public void enqueue(int x) {
+        stack1.push(x);
+    }
+    public int dequeue() {
+        if (stack2.isEmpty()) {
+            while (!stack1.isEmpty()) {
+                stack2.push(stack1.pop());
+            }
+        }
+        if (stack2.isEmpty()) {
+            throw new IllegalStateException("Queue is empty");
+        }
+        return stack2.pop();
+    }
+    public int peek() {
+        if (stack2.isEmpty()) {
+            while (!stack1.isEmpty()) {
+                stack2.push(stack1.pop());
+            }
+        }
+        if (stack2.isEmpty()) {
+            throw new IllegalStateException("Queue is empty");
+        }
+        return stack2.peek();
+    }
+    public boolean isEmpty() {
+        return stack1.isEmpty() && stack2.isEmpty();
+    }
+}
+public class QueueUsingStacks {
+    public static void main(String[] args) {
+        MyQueue queue = new MyQueue();
+        queue.enqueue(1);
+        queue.enqueue(2);
+        queue.enqueue(3);
+        
+        System.out.println(queue.dequeue()); 
+        System.out.println(queue.peek()); 
+        System.out.println(queue.dequeue()); 
+        System.out.println(queue.dequeue()); 
+        System.out.println(queue.isEmpty()); 
+    }
+}
