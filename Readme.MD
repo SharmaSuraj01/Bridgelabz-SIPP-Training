@@ -92,7 +92,7 @@ git commit -m "Describe your changes"
 Connect to Remote Repo
 
 text
-git remote add origin https://github.com/your-username/your-repo.git
+git remote add origin https://github.com/SharmaSuraj01/Bridgelabz-SIPP-Training
 Push to GitHub
 
 text
