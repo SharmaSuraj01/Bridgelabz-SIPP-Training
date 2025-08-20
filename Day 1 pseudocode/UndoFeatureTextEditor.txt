@@ -1,0 +1,51 @@
+PSEUDOCODE: Undo Feature in Text Editor
+
+CLASS TextEditor:
+    ATTRIBUTES:
+        - content (String)
+        - undoStack (Stack of String)
+    
+    CONSTRUCTOR TextEditor():
+        SET content = ""
+        INITIALIZE undoStack as empty stack
+    
+    METHOD addText(text):
+        PUSH current content to undoStack
+        SET content = content + text
+        PRINT "Added: " + text
+        PRINT "Current content: " + content
+    
+    METHOD deleteText(length):
+        PUSH current content to undoStack
+        IF length >= content.length():
+            SET content = ""
+        ELSE:
+            SET content = content.substring(0, content.length() - length)
+        PRINT "Deleted " + length + " characters"
+        PRINT "Current content: " + content
+    
+    METHOD undo():
+        IF undoStack is not empty:
+            SET content = POP from undoStack
+            PRINT "Undo performed"
+            PRINT "Current content: " + content
+        ELSE:
+            PRINT "Nothing to undo"
+    
+    METHOD getCurrentContent():
+        RETURN content
+
+MAIN METHOD:
+    CREATE textEditor = new TextEditor()
+    
+    PRINT "=== Text Editor with Undo Feature ==="
+    
+    CALL textEditor.addText("Hello")
+    CALL textEditor.addText(" World")
+    CALL textEditor.addText("!")
+    
+    CALL textEditor.deleteText(1)
+    CALL textEditor.undo()
+    CALL textEditor.undo()
+    CALL textEditor.undo()
+    CALL textEditor.undo()
