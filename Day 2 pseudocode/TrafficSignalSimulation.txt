@@ -1,0 +1,52 @@
+PSEUDOCODE: Traffic Signal Simulation
+
+ENUM TrafficLight:
+    RED(30),     // 30 seconds
+    YELLOW(5),   // 5 seconds
+    GREEN(25)    // 25 seconds
+    
+    ATTRIBUTES:
+        - duration (Integer)
+    
+    CONSTRUCTOR TrafficLight(duration):
+        SET this.duration = duration
+    
+    METHOD getDuration():
+        RETURN duration
+
+CLASS TrafficSignal:
+    ATTRIBUTES:
+        - currentLight (TrafficLight)
+        - timeRemaining (Integer)
+    
+    CONSTRUCTOR TrafficSignal():
+        SET currentLight = TrafficLight.RED
+        SET timeRemaining = currentLight.getDuration()
+    
+    METHOD switchLight():
+        SWITCH currentLight:
+            CASE RED:
+                SET currentLight = GREEN
+            CASE GREEN:
+                SET currentLight = YELLOW
+            CASE YELLOW:
+                SET currentLight = RED
+        SET timeRemaining = currentLight.getDuration()
+    
+    METHOD tick():
+        DECREMENT timeRemaining by 1
+        IF timeRemaining <= 0:
+            CALL switchLight()
+    
+    METHOD displayStatus():
+        PRINT "Current Light: " + currentLight + " | Time Remaining: " + timeRemaining + "s"
+
+MAIN METHOD:
+    CREATE trafficSignal = new TrafficSignal()
+    
+    PRINT "=== Traffic Signal Simulation ==="
+    
+    FOR i = 1 to 70: // Simulate 70 seconds
+        CALL trafficSignal.displayStatus()
+        CALL trafficSignal.tick()
+        WAIT 1 second
