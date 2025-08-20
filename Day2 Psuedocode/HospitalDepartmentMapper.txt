@@ -1,0 +1,102 @@
+PSEUDOCODE: Hospital Department Mapper
+
+CLASS Doctor:
+    ATTRIBUTES:
+        - id (String)
+        - name (String)
+        - specialization (String)
+        - experience (Integer) // years
+        - department (String)
+    
+    CONSTRUCTOR Doctor(id, name, specialization, experience, department):
+        SET this.id = id
+        SET this.name = name
+        SET this.specialization = specialization
+        SET this.experience = experience
+        SET this.department = department
+    
+    METHOD toString():
+        RETURN "Dr. " + name + " (" + specialization + ") - " + experience + " years exp"
+
+CLASS HospitalMapper:
+    ATTRIBUTES:
+        - departmentMap (Map<String, List<Doctor>>)
+    
+    CONSTRUCTOR HospitalMapper():
+        INITIALIZE departmentMap as HashMap<String, List<Doctor>>
+    
+    METHOD addDoctor(doctor):
+        IF departmentMap does not contain doctor.department:
+            PUT new ArrayList<Doctor> for doctor.department in departmentMap
+        
+        GET doctorList for doctor.department from departmentMap
+        ADD doctor to doctorList
+        PRINT "Added: " + doctor.toString() + " to " + doctor.department
+    
+    METHOD getDoctorsByDepartment(department):
+        IF departmentMap contains department:
+            RETURN departmentMap.get(department)
+        ELSE:
+            RETURN empty list
+    
+    METHOD filterBySpecialization(specialization):
+        CREATE filteredDoctors as empty List<Doctor>
+        
+        FOR each department, doctorList in departmentMap:
+            FILTER doctorList WHERE doctor.specialization equals specialization
+            ADD filtered doctors to filteredDoctors
+        
+        RETURN filteredDoctors
+    
+    METHOD filterByExperience(minYears):
+        CREATE experiencedDoctors as empty List<Doctor>
+        
+        FOR each department, doctorList in departmentMap:
+            FILTER doctorList WHERE doctor.experience >= minYears
+            ADD filtered doctors to experiencedDoctors
+        
+        RETURN experiencedDoctors
+    
+    METHOD displayAllDepartments():
+        PRINT "Hospital Department Mapping:"
+        FOR each department, doctorList in departmentMap:
+            PRINT "\n" + department + " Department (" + doctorList.size() + " doctors):"
+            FOR each doctor in doctorList:
+                PRINT "  " + doctor.toString()
+    
+    METHOD getDepartmentCount():
+        RETURN departmentMap.size()
+
+MAIN METHOD:
+    CREATE hospitalMapper = new HospitalMapper()
+    
+    PRINT "=== Hospital Department Mapper ==="
+    
+    // Add doctors to different departments
+    CALL hospitalMapper.addDoctor(Doctor("D001", "John Smith", "Cardiology", 15, "Cardiology"))
+    CALL hospitalMapper.addDoctor(Doctor("D002", "Jane Doe", "Neurology", 12, "Neurology"))
+    CALL hospitalMapper.addDoctor(Doctor("D003", "Bob Johnson", "Cardiology", 8, "Cardiology"))
+    CALL hospitalMapper.addDoctor(Doctor("D004", "Alice Brown", "Pediatrics", 10, "Pediatrics"))
+    CALL hospitalMapper.addDoctor(Doctor("D005", "Charlie Wilson", "Neurology", 20, "Neurology"))
+    CALL hospitalMapper.addDoctor(Doctor("D006", "Diana Davis", "Orthopedics", 7, "Orthopedics"))
+    
+    PRINT newline
+    CALL hospitalMapper.displayAllDepartments()
+    
+    // Filter by specialization
+    PRINT "\nDoctors specializing in Cardiology:"
+    SET cardiologists = hospitalMapper.filterBySpecialization("Cardiology")
+    FOR each doctor in cardiologists:
+        PRINT "  " + doctor.toString()
+    
+    // Filter by experience
+    PRINT "\nDoctors with 10+ years experience:"
+    SET experiencedDoctors = hospitalMapper.filterByExperience(10)
+    FOR each doctor in experiencedDoctors:
+        PRINT "  " + doctor.toString()
+    
+    // Get specific department
+    PRINT "\nNeurology Department doctors:"
+    SET neurologyDoctors = hospitalMapper.getDoctorsByDepartment("Neurology")
+    FOR each doctor in neurologyDoctors:
+        PRINT "  " + doctor.toString()
