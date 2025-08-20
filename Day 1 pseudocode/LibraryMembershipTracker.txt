@@ -1,0 +1,47 @@
+PSEUDOCODE: Library Membership Tracker
+
+CLASS Member:
+    ATTRIBUTES:
+        - name (String)
+        - id (String)
+        - membershipDate (Date)
+        - validityMonths (Integer)
+    
+    CONSTRUCTOR Member(name, id, membershipDate, validityMonths):
+        SET this.name = name
+        SET this.id = id
+        SET this.membershipDate = membershipDate
+        SET this.validityMonths = validityMonths
+    
+    METHOD isMembershipValid():
+        SET expiryDate = membershipDate + validityMonths
+        SET currentDate = getCurrentDate()
+        IF currentDate <= expiryDate:
+            RETURN true
+        ELSE:
+            RETURN false
+    
+    METHOD getDaysUntilExpiry():
+        SET expiryDate = membershipDate + validityMonths
+        SET currentDate = getCurrentDate()
+        RETURN expiryDate - currentDate (in days)
+    
+    METHOD displayMemberInfo():
+        PRINT "Member: " + name + " (ID: " + id + ")"
+        PRINT "Membership Date: " + membershipDate
+        IF isMembershipValid():
+            PRINT "Status: Valid"
+            PRINT "Days until expiry: " + getDaysUntilExpiry()
+        ELSE:
+            PRINT "Status: Expired"
+
+MAIN METHOD:
+    CREATE array members with:
+        - Member("John Doe", "M001", "2024-01-15", 12)
+        - Member("Jane Smith", "M002", "2023-06-10", 6)
+        - Member("Bob Johnson", "M003", "2024-11-01", 12)
+    
+    PRINT "=== Library Membership Tracker ==="
+    FOR each member in members:
+        CALL member.displayMemberInfo()
+        PRINT newline
