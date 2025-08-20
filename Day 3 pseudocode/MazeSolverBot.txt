@@ -1,0 +1,155 @@
+PSEUDOCODE: Maze Solver Bot
+
+CLASS MazeSolver:
+    ATTRIBUTES:
+        - maze (2D Array of Integer) // 0 = path, 1 = wall, 2 = visited
+        - rows (Integer)
+        - cols (Integer)
+        - solution (2D Array of Boolean) // true = part of solution path
+    
+    CONSTRUCTOR MazeSolver(maze):
+        SET this.maze = maze
+        SET rows = maze.length
+        SET cols = maze[0].length
+        INITIALIZE solution as 2D boolean array with same dimensions, all false
+    
+    METHOD solveMaze():
+        PRINT "=== Maze Solver Bot ==="
+        CALL displayMaze("Original Maze:")
+        
+        IF solveMazeRecursive(0, 0): // Start from top-left corner
+            PRINT "Maze solved successfully!"
+            CALL displaySolution()
+            RETURN true
+        ELSE:
+            PRINT "No solution exists for this maze"
+            RETURN false
+    
+    METHOD solveMazeRecursive(row, col):
+        // Base case: reached destination (bottom-right corner)
+        IF row == rows-1 AND col == cols-1:
+            SET solution[row][col] = true
+            RETURN true
+        
+        // Check if current position is valid
+        IF isValidMove(row, col):
+            // Mark current cell as part of solution
+            SET solution[row][col] = true
+            SET maze[row][col] = 2 // Mark as visited
+            
+            // Try moving in all 4 directions: right, down, left, up
+            
+            // Move right
+            IF solveMazeRecursive(row, col + 1):
+                RETURN true
+            
+            // Move down
+            IF solveMazeRecursive(row + 1, col):
+                RETURN true
+            
+            // Move left
+            IF solveMazeRecursive(row, col - 1):
+                RETURN true
+            
+            // Move up
+            IF solveMazeRecursive(row - 1, col):
+                RETURN true
+            
+            // Backtrack: if no direction works, unmark current cell
+            SET solution[row][col] = false
+            SET maze[row][col] = 0 // Reset to path
+            RETURN false
+        
+        RETURN false
+    
+    METHOD isValidMove(row, col):
+        // Check boundaries
+        IF row < 0 OR row >= rows OR col < 0 OR col >= cols:
+            RETURN false
+        
+        // Check if cell is a wall (1) or already visited (2)
+        IF maze[row][col] == 1 OR maze[row][col] == 2:
+            RETURN false
+        
+        RETURN true
+    
+    METHOD displayMaze(title):
+        PRINT title
+        FOR i = 0 to rows-1:
+            FOR j = 0 to cols-1:
+                IF maze[i][j] == 0:
+                    PRINT "  " // Path
+                ELSE IF maze[i][j] == 1:
+                    PRINT "██" // Wall
+                ELSE IF maze[i][j] == 2:
+                    PRINT "••" // Visited
+            PRINT newline
+        PRINT newline
+    
+    METHOD displaySolution():
+        PRINT "Solution Path (★ = solution path):"
+        FOR i = 0 to rows-1:
+            FOR j = 0 to cols-1:
+                IF solution[i][j]:
+                    PRINT "★ " // Solution path
+                ELSE IF maze[i][j] == 1:
+                    PRINT "██" // Wall
+                ELSE:
+                    PRINT "  " // Empty path
+            PRINT newline
+        PRINT newline
+    
+    METHOD resetMaze():
+        FOR i = 0 to rows-1:
+            FOR j = 0 to cols-1:
+                IF maze[i][j] == 2: // Reset visited cells
+                    SET maze[i][j] = 0
+        
+        // Reset solution array
+        FOR i = 0 to rows-1:
+            FOR j = 0 to cols-1:
+                SET solution[i][j] = false
+
+MAIN METHOD:
+    // Create a sample maze (0 = path, 1 = wall)
+    CREATE maze as 2D array:
+    [
+        [0, 1, 0, 0, 0],
+        [0, 1, 0, 1, 0],
+        [0, 0, 0, 1, 0],
+        [1, 1, 0, 0, 0],
+        [0, 0, 0, 1, 0]
+    ]
+    
+    CREATE solver = new MazeSolver(maze)
+    CALL solver.solveMaze()
+    
+    PRINT "\nTrying another maze:"
+    
+    // Create a more complex maze
+    CREATE complexMaze as 2D array:
+    [
+        [0, 0, 1, 0, 0, 0],
+        [1, 0, 1, 0, 1, 0],
+        [0, 0, 0, 0, 1, 0],
+        [0, 1, 1, 0, 0, 0],
+        [0, 0, 0, 1, 1, 0],
+        [1, 1, 0, 0, 0, 0]
+    ]
+    
+    CREATE complexSolver = new MazeSolver(complexMaze)
+    CALL complexSolver.solveMaze()
+    
+    PRINT "\nTrying unsolvable maze:"
+    
+    // Create an unsolvable maze
+    CREATE unsolvableMaze as 2D array:
+    [
+        [0, 1, 0, 0],
+        [0, 1, 1, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0]
+    ]
+    
+    CREATE unsolvableSolver = new MazeSolver(unsolvableMaze)
+    CALL unsolvableSolver.solveMaze()
