@@ -1,0 +1,75 @@
+PSEUDOCODE: Job Scheduler
+
+CLASS Job:
+    ATTRIBUTES:
+        - id (String)
+        - name (String)
+        - deadline (DateTime)
+        - processingTime (Integer) // minutes
+        - priority (Integer) // calculated priority
+    
+    CONSTRUCTOR Job(id, name, deadline, processingTime):
+        SET this.id = id
+        SET this.name = name
+        SET this.deadline = deadline
+        SET this.processingTime = processingTime
+        SET this.priority = calculatePriority()
+    
+    METHOD calculatePriority():
+        SET timeUntilDeadline = deadline - getCurrentTime() // in minutes
+        SET urgencyScore = 1000 / timeUntilDeadline // higher urgency = higher score
+        SET efficiencyScore = 100 / processingTime // shorter jobs = higher score
+        RETURN urgencyScore + efficiencyScore
+    
+    METHOD toString():
+        RETURN "Job{" + id + ": " + name + ", Deadline: " + deadline + 
+               ", Processing: " + processingTime + "min, Priority: " + priority + "}"
+
+CLASS JobScheduler:
+    ATTRIBUTES:
+        - jobQueue (PriorityQueue of Job) // ordered by priority (highest first)
+    
+    CONSTRUCTOR JobScheduler():
+        INITIALIZE jobQueue as PriorityQueue ordered by priority (descending)
+    
+    METHOD addJob(job):
+        INSERT job into jobQueue
+        PRINT "Added job: " + job.toString()
+    
+    METHOD processNextJob():
+        IF jobQueue is not empty:
+            SET job = REMOVE highest priority job from jobQueue
+            PRINT "Processing: " + job.toString()
+            PRINT "Estimated completion time: " + job.processingTime + " minutes"
+            RETURN job
+        ELSE:
+            PRINT "No jobs in queue"
+            RETURN null
+    
+    METHOD displayQueue():
+        PRINT "Jobs in queue (by priority):"
+        FOR each job in jobQueue (ordered by priority):
+            PRINT "  " + job.toString()
+    
+    METHOD getQueueSize():
+        RETURN jobQueue.size()
+
+MAIN METHOD:
+    CREATE scheduler = new JobScheduler()
+    
+    PRINT "=== Job Scheduler System ==="
+    
+    // Add jobs with different deadlines and processing times
+    CALL scheduler.addJob(Job("J001", "Database Backup", "2024-12-25 14:00", 45))
+    CALL scheduler.addJob(Job("J002", "System Update", "2024-12-25 12:00", 30))
+    CALL scheduler.addJob(Job("J003", "Report Generation", "2024-12-25 16:00", 60))
+    CALL scheduler.addJob(Job("J004", "Security Scan", "2024-12-25 11:00", 20))
+    CALL scheduler.addJob(Job("J005", "Data Migration", "2024-12-25 18:00", 90))
+    
+    PRINT newline
+    CALL scheduler.displayQueue()
+    
+    PRINT "\nProcessing jobs in priority order:"
+    WHILE scheduler.getQueueSize() > 0:
+        CALL scheduler.processNextJob()
+        PRINT newline
