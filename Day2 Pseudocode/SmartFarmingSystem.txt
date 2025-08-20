@@ -1,0 +1,83 @@
+PSEUDOCODE: Smart Farming System
+
+ABSTRACT CLASS Crop:
+    ATTRIBUTES:
+        - name (String)
+        - plantedDate (Date)
+        - area (Double) // in acres
+    
+    CONSTRUCTOR Crop(name, plantedDate, area):
+        SET this.name = name
+        SET this.plantedDate = plantedDate
+        SET this.area = area
+    
+    ABSTRACT METHOD getWaterRequirement(): Double
+    ABSTRACT METHOD getHarvestTime(): Integer // days
+    ABSTRACT METHOD getExpectedYield(): Double // tons per acre
+    
+    METHOD isReadyForHarvest():
+        SET daysSincePlanted = getCurrentDate() - plantedDate
+        RETURN daysSincePlanted >= getHarvestTime()
+    
+    METHOD displayCropInfo():
+        PRINT "Crop: " + name + " | Area: " + area + " acres"
+        PRINT "Water needed: " + getWaterRequirement() + " liters/day"
+        PRINT "Ready for harvest: " + (isReadyForHarvest() ? "Yes" : "No")
+
+CLASS Rice EXTENDS Crop:
+    CONSTRUCTOR Rice(plantedDate, area):
+        CALL super("Rice", plantedDate, area)
+    
+    METHOD getWaterRequirement():
+        RETURN area * 2000 // 2000 liters per acre per day
+    
+    METHOD getHarvestTime():
+        RETURN 120 // 120 days
+    
+    METHOD getExpectedYield():
+        RETURN area * 3.5 // 3.5 tons per acre
+
+CLASS Wheat EXTENDS Crop:
+    CONSTRUCTOR Wheat(plantedDate, area):
+        CALL super("Wheat", plantedDate, area)
+    
+    METHOD getWaterRequirement():
+        RETURN area * 800 // 800 liters per acre per day
+    
+    METHOD getHarvestTime():
+        RETURN 90 // 90 days
+    
+    METHOD getExpectedYield():
+        RETURN area * 2.8 // 2.8 tons per acre
+
+CLASS Corn EXTENDS Crop:
+    CONSTRUCTOR Corn(plantedDate, area):
+        CALL super("Corn", plantedDate, area)
+    
+    METHOD getWaterRequirement():
+        RETURN area * 1200 // 1200 liters per acre per day
+    
+    METHOD getHarvestTime():
+        RETURN 100 // 100 days
+    
+    METHOD getExpectedYield():
+        RETURN area * 4.2 // 4.2 tons per acre
+
+MAIN METHOD:
+    CREATE crops array with:
+        - Rice("2024-01-15", 5.0)
+        - Wheat("2024-02-01", 3.0)
+        - Corn("2024-01-20", 4.0)
+    
+    PRINT "=== Smart Farming System ==="
+    
+    FOR each crop in crops:
+        CALL crop.displayCropInfo()
+        PRINT "Expected yield: " + crop.getExpectedYield() + " tons"
+        PRINT newline
+    
+    SET totalWaterNeeded = 0
+    FOR each crop in crops:
+        SET totalWaterNeeded += crop.getWaterRequirement()
+    
+    PRINT "Total daily water requirement: " + totalWaterNeeded + " liters"
