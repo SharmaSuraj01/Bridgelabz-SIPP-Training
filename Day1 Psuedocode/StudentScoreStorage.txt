@@ -1,0 +1,43 @@
+PSEUDOCODE: Student Score Storage
+
+MAIN METHOD:
+    PRINT "=== Student Score Storage ==="
+    
+    // Create HashMap to store student marks
+    CREATE studentMarks as HashMap<String, Integer>
+    
+    // Add student data
+    PUT ("Alice", 95) in studentMarks
+    PUT ("Bob", 87) in studentMarks
+    PUT ("Charlie", 92) in studentMarks
+    PUT ("Diana", 98) in studentMarks
+    PUT ("Eve", 89) in studentMarks
+    
+    PRINT "All student scores:"
+    FOR each entry in studentMarks:
+        PRINT entry.key + ": " + entry.value
+    
+    // Find highest scorer using streams
+    SET highestScorer = studentMarks.entrySet()
+                                   .stream()
+                                   .max(comparing by value)
+                                   .get()
+    
+    PRINT "\nHighest Scorer:"
+    PRINT highestScorer.key + " with score: " + highestScorer.value
+    
+    // Additional stream operations
+    PRINT "\nStudents with score >= 90:"
+    FILTER studentMarks.entrySet().stream()
+           WHERE value >= 90
+           FOR each entry:
+               PRINT entry.key + ": " + entry.value
+    
+    // Calculate average score
+    SET averageScore = studentMarks.values()
+                                  .stream()
+                                  .mapToInt(Integer::intValue)
+                                  .average()
+                                  .orElse(0.0)
+    
+    PRINT "\nAverage Score: " + averageScore
