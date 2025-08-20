@@ -48,7 +48,7 @@ CLASS CallCenter:
 MAIN METHOD:
     CREATE callCenter = new CallCenter()
     
-    PRINT "=== Call Center Queue Management ==="
+    PRINT "Call Center Queue Management"
     
     CALL callCenter.addCustomer(Customer("John", "NORMAL", "10:00"))
     CALL callCenter.addCustomer(Customer("Jane", "EMERGENCY", "10:01"))
