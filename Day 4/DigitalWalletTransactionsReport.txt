@@ -1,0 +1,283 @@
+PSEUDOCODE: Digital Wallet Transactions Report
+
+CLASS Transaction:
+    ATTRIBUTES:
+        - transactionId (String)
+        - userId (String)
+        - merchantName (String)
+        - amount (Double)
+        - transactionDate (Date)
+        - category (String)
+        - paymentMethod (String)
+        - status (String) // "SUCCESS", "FAILED", "PENDING"
+    
+    CONSTRUCTOR Transaction(transactionId, userId, merchantName, amount, transactionDate, category, paymentMethod, status):
+        SET this.transactionId = transactionId
+        SET this.userId = userId
+        SET this.merchantName = merchantName
+        SET this.amount = amount
+        SET this.transactionDate = transactionDate
+        SET this.category = category
+        SET this.paymentMethod = paymentMethod
+        SET this.status = status
+    
+    METHOD getMonth():
+        RETURN transactionDate.getMonth() // Returns month as integer (1-12)
+    
+    METHOD getYear():
+        RETURN transactionDate.getYear()
+    
+    METHOD getMonthYear():
+        RETURN getYear() + "-" + String.format("%02d", getMonth())
+    
+    METHOD toString():
+        RETURN transactionId + " | " + merchantName + " | $" + amount + " | " + 
+               transactionDate + " | " + category + " | " + status
+
+CLASS MerchantMonthlySummary:
+    ATTRIBUTES:
+        - merchantName (String)
+        - month (String) // Format: "YYYY-MM"
+        - totalAmount (Double)
+        - transactionCount (Integer)
+        - successfulTransactions (Integer)
+        - failedTransactions (Integer)
+        - averageTransactionAmount (Double)
+    
+    CONSTRUCTOR MerchantMonthlySummary(merchantName, month):
+        SET this.merchantName = merchantName
+        SET this.month = month
+        SET totalAmount = 0.0
+        SET transactionCount = 0
+        SET successfulTransactions = 0
+        SET failedTransactions = 0
+        SET averageTransactionAmount = 0.0
+    
+    METHOD addTransaction(transaction):
+        INCREMENT transactionCount
+        IF transaction.status equals "SUCCESS":
+            SET totalAmount += transaction.amount
+            INCREMENT successfulTransactions
+        ELSE IF transaction.status equals "FAILED":
+            INCREMENT failedTransactions
+        
+        SET averageTransactionAmount = totalAmount / Math.max(1, successfulTransactions)
+    
+    METHOD toString():
+        RETURN merchantName + " (" + month + ") | Total: $" + String.format("%.2f", totalAmount) + 
+               " | Transactions: " + transactionCount + " | Success Rate: " + 
+               String.format("%.1f", (successfulTransactions * 100.0) / transactionCount) + "%"
+
+CLASS DigitalWalletReportGenerator:
+    ATTRIBUTES:
+        - transactions (List<Transaction>)
+    
+    CONSTRUCTOR DigitalWalletReportGenerator():
+        INITIALIZE transactions as empty list
+    
+    METHOD addTransaction(transaction):
+        ADD transaction to transactions
+        PRINT "Added transaction: " + transaction.toString()
+    
+    METHOD groupTransactionsByMerchantAndMonth():
+        PRINT "=== Grouping Transactions by Merchant and Month ==="
+        
+        // Using streams to group by merchant and month
+        SET groupedData = transactions.stream()
+                                    .filter(t -> t.status.equals("SUCCESS"))
+                                    .collect(groupingBy(
+                                        t -> t.merchantName + "|" + t.getMonthYear(),
+                                        toList()
+                                    ))
+        
+        // Convert to merchant monthly summaries
+        CREATE summaries as Map<String, MerchantMonthlySummary>
+        
+        FOR each key, transactionList in groupedData:
+            SET parts = key.split("\\|")
+            SET merchantName = parts[0]
+            SET monthYear = parts[1]
+            
+            CREATE summary = new MerchantMonthlySummary(merchantName, monthYear)
+            FOR each transaction in transactionList:
+                CALL summary.addTransaction(transaction)
+            
+            PUT key, summary in summaries
+        
+        RETURN summaries
+    
+    METHOD generateMerchantReport():
+        PRINT "=== Merchant Transaction Report ==="
+        
+        SET merchantSummaries = groupTransactionsByMerchantAndMonth()
+        
+        // Group summaries by merchant
+        SET merchantGroups = merchantSummaries.values()
+                                            .stream()
+                                            .collect(groupingBy(s -> s.merchantName))
+        
+        FOR each merchantName, summaryList in merchantGroups:
+            PRINT "\n" + merchantName.toUpperCase() + ":"
+            
+            SET totalMerchantAmount = 0.0
+            SET totalMerchantTransactions = 0
+            
+            // Sort by month
+            SORT summaryList by month
+            
+            FOR each summary in summaryList:
+                PRINT "  " + summary.toString()
+                SET totalMerchantAmount += summary.totalAmount
+                SET totalMerchantTransactions += summary.transactionCount
+            
+            PRINT "  MERCHANT TOTAL: $" + String.format("%.2f", totalMerchantAmount) + 
+                  " (" + totalMerchantTransactions + " transactions)"
+    
+    METHOD generateMonthlyReport():
+        PRINT "=== Monthly Transaction Report ==="
+        
+        // Group by month across all merchants
+        SET monthlyData = transactions.stream()
+                                    .filter(t -> t.status.equals("SUCCESS"))
+                                    .collect(groupingBy(
+                                        t -> t.getMonthYear(),
+                                        summingDouble(t -> t.amount)
+                                    ))
+        
+        // Sort by month
+        SET sortedMonths = monthlyData.keySet().stream().sorted().collect(toList())
+        
+        FOR each month in sortedMonths:
+            SET monthlyTotal = GET month from monthlyData
+            SET monthlyTransactionCount = transactions.stream()
+                                                    .filter(t -> t.getMonthYear().equals(month))
+                                                    .filter(t -> t.status.equals("SUCCESS"))
+                                                    .count()
+            
+            PRINT month + ": $" + String.format("%.2f", monthlyTotal) + 
+                  " (" + monthlyTransactionCount + " transactions)"
+    
+    METHOD generateCategoryReport():
+        PRINT "=== Category-wise Transaction Report ==="
+        
+        SET categoryData = transactions.stream()
+                                     .filter(t -> t.status.equals("SUCCESS"))
+                                     .collect(groupingBy(
+                                         t -> t.category,
+                                         summingDouble(t -> t.amount)
+                                     ))
+        
+        // Sort by amount (descending)
+        SET sortedCategories = categoryData.entrySet()
+                                         .stream()
+                                         .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+                                         .collect(toList())
+        
+        FOR each entry in sortedCategories:
+            SET category = entry.getKey()
+            SET totalAmount = entry.getValue()
+            SET transactionCount = transactions.stream()
+                                             .filter(t -> t.category.equals(category))
+                                             .filter(t -> t.status.equals("SUCCESS"))
+                                             .count()
+            
+            PRINT category + ": $" + String.format("%.2f", totalAmount) + 
+                  " (" + transactionCount + " transactions)"
+    
+    METHOD generateTopMerchantsReport(topN):
+        PRINT "=== Top " + topN + " Merchants by Revenue ==="
+        
+        SET merchantRevenue = transactions.stream()
+                                        .filter(t -> t.status.equals("SUCCESS"))
+                                        .collect(groupingBy(
+                                            t -> t.merchantName,
+                                            summingDouble(t -> t.amount)
+                                        ))
+        
+        SET topMerchants = merchantRevenue.entrySet()
+                                        .stream()
+                                        .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+                                        .limit(topN)
+                                        .collect(toList())
+        
+        SET rank = 1
+        FOR each entry in topMerchants:
+            SET merchantName = entry.getKey()
+            SET revenue = entry.getValue()
+            SET transactionCount = transactions.stream()
+                                             .filter(t -> t.merchantName.equals(merchantName))
+                                             .filter(t -> t.status.equals("SUCCESS"))
+                                             .count()
+            
+            PRINT rank + ". " + merchantName + ": $" + String.format("%.2f", revenue) + 
+                  " (" + transactionCount + " transactions)"
+            INCREMENT rank
+    
+    METHOD generateFailureAnalysis():
+        PRINT "=== Transaction Failure Analysis ==="
+        
+        SET totalTransactions = transactions.size()
+        SET failedTransactions = transactions.stream()
+                                           .filter(t -> t.status.equals("FAILED"))
+                                           .count()
+        
+        SET failureRate = (failedTransactions * 100.0) / totalTransactions
+        
+        PRINT "Total Transactions: " + totalTransactions
+        PRINT "Failed Transactions: " + failedTransactions
+        PRINT "Failure Rate: " + String.format("%.2f", failureRate) + "%"
+        
+        // Failure by merchant
+        SET merchantFailures = transactions.stream()
+                                         .filter(t -> t.status.equals("FAILED"))
+                                         .collect(groupingBy(
+                                             t -> t.merchantName,
+                                             counting()
+                                         ))
+        
+        IF merchantFailures.size() > 0:
+            PRINT "\nFailures by Merchant:"
+            FOR each merchantName, failureCount in merchantFailures:
+                PRINT "  " + merchantName + ": " + failureCount + " failures"
+    
+    METHOD generateComprehensiveReport():
+        PRINT "=== COMPREHENSIVE DIGITAL WALLET REPORT ==="
+        PRINT "Report generated on: " + getCurrentDate()
+        PRINT "Total transactions analyzed: " + transactions.size()
+        PRINT newline
+        
+        CALL generateMerchantReport()
+        PRINT newline
+        
+        CALL generateMonthlyReport()
+        PRINT newline
+        
+        CALL generateCategoryReport()
+        PRINT newline
+        
+        CALL generateTopMerchantsReport(5)
+        PRINT newline
+        
+        CALL generateFailureAnalysis()
+
+MAIN METHOD:
+    CREATE reportGenerator = new DigitalWalletReportGenerator()
+    
+    PRINT "=== Digital Wallet Transactions Report System ==="
+    
+    // Add sample transactions across different months and merchants
+    CALL reportGenerator.addTransaction(Transaction("T001", "U001", "Amazon", 89.99, "2024-01-15", "Shopping", "Credit Card", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T002", "U002", "Starbucks", 12.50, "2024-01-16", "Food", "UPI", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T003", "U001", "Netflix", 15.99, "2024-01-20", "Entertainment", "Debit Card", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T004", "U003", "Amazon", 156.78, "2024-02-05", "Shopping", "Credit Card", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T005", "U002", "Uber", 25.30, "2024-02-10", "Transportation", "UPI", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T006", "U001", "Starbucks", 8.75, "2024-02-12", "Food", "Credit Card", "FAILED"))
+    CALL reportGenerator.addTransaction(Transaction("T007", "U004", "Amazon", 234.50, "2024-02-15", "Shopping", "Debit Card", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T008", "U003", "Netflix", 15.99, "2024-02-20", "Entertainment", "UPI", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T009", "U002", "McDonald's", 18.45, "2024-03-01", "Food", "Credit Card", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T010", "U001", "Spotify", 9.99, "2024-03-05", "Entertainment", "Debit Card", "SUCCESS"))
+    CALL reportGenerator.addTransaction(Transaction("T011", "U004", "Uber", 32.80, "2024-03-08", "Transportation", "UPI", "FAILED"))
+    CALL reportGenerator.addTransaction(Transaction("T012", "U003", "Amazon", 67.25, "2024-03-12", "Shopping", "Credit Card", "SUCCESS"))
+    
+    PRINT newline
+    CALL reportGenerator.generateComprehensiveReport()

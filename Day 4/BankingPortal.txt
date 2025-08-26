@@ -1,0 +1,208 @@
+PSEUDOCODE: Banking Portal
+
+ABSTRACT CLASS Account:
+    ATTRIBUTES:
+        - accountNumber (String)
+        - accountHolderName (String)
+        - balance (Double)
+        - accountType (String)
+    
+    CONSTRUCTOR Account(accountNumber, accountHolderName, initialBalance, accountType):
+        SET this.accountNumber = accountNumber
+        SET this.accountHolderName = accountHolderName
+        SET this.balance = initialBalance
+        SET this.accountType = accountType
+    
+    METHOD deposit(amount):
+        IF amount > 0:
+            SET balance += amount
+            PRINT "Deposited $" + amount + ". New balance: $" + balance
+            RETURN true
+        ELSE:
+            PRINT "Invalid deposit amount"
+            RETURN false
+    
+    ABSTRACT METHOD withdraw(amount): Boolean
+    ABSTRACT METHOD getMinimumBalance(): Double
+    
+    METHOD getBalance():
+        RETURN balance
+    
+    METHOD displayAccountInfo():
+        PRINT "Account: " + accountNumber + " | Type: " + accountType
+        PRINT "Holder: " + accountHolderName + " | Balance: $" + balance
+
+CLASS SavingAccount EXTENDS Account:
+    ATTRIBUTES:
+        - interestRate (Double)
+        - minimumBalance (Double)
+    
+    CONSTRUCTOR SavingAccount(accountNumber, accountHolderName, initialBalance):
+        CALL super(accountNumber, accountHolderName, initialBalance, "SAVING")
+        SET interestRate = 0.04 // 4% annual interest
+        SET minimumBalance = 500.0
+    
+    METHOD withdraw(amount):
+        IF amount <= 0:
+            PRINT "Invalid withdrawal amount"
+            RETURN false
+        
+        IF (balance - amount) < minimumBalance:
+            PRINT "Withdrawal denied. Minimum balance of $" + minimumBalance + " required"
+            RETURN false
+        
+        SET balance -= amount
+        PRINT "Withdrawn $" + amount + " from Saving Account. Balance: $" + balance
+        RETURN true
+    
+    METHOD getMinimumBalance():
+        RETURN minimumBalance
+    
+    METHOD calculateInterest():
+        SET interest = balance * interestRate / 12 // Monthly interest
+        SET balance += interest
+        PRINT "Interest of $" + interest + " added. New balance: $" + balance
+
+CLASS CurrentAccount EXTENDS Account:
+    ATTRIBUTES:
+        - overdraftLimit (Double)
+        - transactionFee (Double)
+    
+    CONSTRUCTOR CurrentAccount(accountNumber, accountHolderName, initialBalance):
+        CALL super(accountNumber, accountHolderName, initialBalance, "CURRENT")
+        SET overdraftLimit = 1000.0
+        SET transactionFee = 2.0
+    
+    METHOD withdraw(amount):
+        IF amount <= 0:
+            PRINT "Invalid withdrawal amount"
+            RETURN false
+        
+        SET availableAmount = balance + overdraftLimit
+        IF amount > availableAmount:
+            PRINT "Withdrawal denied. Exceeds overdraft limit"
+            RETURN false
+        
+        SET balance -= amount
+        SET balance -= transactionFee // Deduct transaction fee
+        PRINT "Withdrawn $" + amount + " from Current Account (Fee: $" + transactionFee + ")"
+        PRINT "Balance: $" + balance
+        RETURN true
+    
+    METHOD getMinimumBalance():
+        RETURN -overdraftLimit // Can go negative up to overdraft limit
+
+CLASS FixedDepositAccount EXTENDS Account:
+    ATTRIBUTES:
+        - maturityDate (Date)
+        - interestRate (Double)
+        - isMatured (Boolean)
+    
+    CONSTRUCTOR FixedDepositAccount(accountNumber, accountHolderName, initialBalance, maturityDate):
+        CALL super(accountNumber, accountHolderName, initialBalance, "FIXED_DEPOSIT")
+        SET this.maturityDate = maturityDate
+        SET interestRate = 0.07 // 7% annual interest
+        SET isMatured = false
+    
+    METHOD withdraw(amount):
+        IF NOT isMatured:
+            PRINT "Withdrawal not allowed before maturity date: " + maturityDate
+            RETURN false
+        
+        IF amount > balance:
+            PRINT "Insufficient balance"
+            RETURN false
+        
+        SET balance -= amount
+        PRINT "Withdrawn $" + amount + " from FD Account. Balance: $" + balance
+        RETURN true
+    
+    METHOD getMinimumBalance():
+        RETURN balance // Cannot withdraw before maturity
+    
+    METHOD checkMaturity():
+        IF getCurrentDate() >= maturityDate:
+            SET isMatured = true
+            SET maturityAmount = balance * (1 + interestRate)
+            SET balance = maturityAmount
+            PRINT "FD matured! New balance with interest: $" + balance
+
+CLASS BankingPortal:
+    ATTRIBUTES:
+        - accounts (Map<String, Account>)
+    
+    CONSTRUCTOR BankingPortal():
+        INITIALIZE accounts as empty HashMap
+    
+    METHOD createAccount(accountType, accountNumber, holderName, initialBalance):
+        IF accounts contains accountNumber:
+            PRINT "Account already exists"
+            RETURN false
+        
+        SWITCH accountType:
+            CASE "SAVING":
+                SET account = new SavingAccount(accountNumber, holderName, initialBalance)
+            CASE "CURRENT":
+                SET account = new CurrentAccount(accountNumber, holderName, initialBalance)
+            CASE "FD":
+                SET maturityDate = getCurrentDate() + 365 days
+                SET account = new FixedDepositAccount(accountNumber, holderName, initialBalance, maturityDate)
+            DEFAULT:
+                PRINT "Invalid account type"
+                RETURN false
+        
+        PUT accountNumber, account in accounts
+        PRINT "Account created successfully: " + accountType
+        RETURN true
+    
+    METHOD performTransaction(accountNumber, transactionType, amount):
+        IF accounts does not contain accountNumber:
+            PRINT "Account not found"
+            RETURN false
+        
+        SET account = GET accountNumber from accounts
+        
+        SWITCH transactionType:
+            CASE "DEPOSIT":
+                RETURN account.deposit(amount)
+            CASE "WITHDRAW":
+                RETURN account.withdraw(amount)
+            DEFAULT:
+                PRINT "Invalid transaction type"
+                RETURN false
+    
+    METHOD displayAccountDetails(accountNumber):
+        IF accounts contains accountNumber:
+            SET account = GET accountNumber from accounts
+            CALL account.displayAccountInfo()
+        ELSE:
+            PRINT "Account not found"
+    
+    METHOD generateReport():
+        PRINT "=== Banking Portal Report ==="
+        FOR each accountNumber, account in accounts:
+            CALL account.displayAccountInfo()
+            PRINT newline
+
+MAIN METHOD:
+    CREATE portal = new BankingPortal()
+    
+    PRINT "=== Banking Portal System ==="
+    
+    // Create different types of accounts
+    CALL portal.createAccount("SAVING", "SAV001", "John Doe", 1000.0)
+    CALL portal.createAccount("CURRENT", "CUR001", "Jane Smith", 2000.0)
+    CALL portal.createAccount("FD", "FD001", "Bob Johnson", 5000.0)
+    
+    PRINT newline
+    
+    CALL portal.performTransaction("SAV001", "DEPOSIT", 500.0)
+    CALL portal.performTransaction("SAV001", "WITHDRAW", 200.0)
+    CALL portal.performTransaction("SAV001", "WITHDRAW", 1500.0) // Should fail
+    
+    CALL portal.performTransaction("CUR001", "WITHDRAW", 2500.0) // Uses overdraft
+    
+    CALL portal.performTransaction("FD001", "WITHDRAW", 1000.0) // Should fail
+    
+    PRINT newline
+    CALL portal.generateReport()

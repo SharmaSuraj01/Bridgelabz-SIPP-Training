@@ -1,0 +1,242 @@
+PSEUDOCODE: Vehicle Rental System
+
+INTERFACE Rentable:
+    METHOD calculateRentalCost(days): Double
+    METHOD isAvailable(): Boolean
+    METHOD rent(customerName, days): Boolean
+    METHOD returnVehicle(): Boolean
+
+ABSTRACT CLASS Vehicle IMPLEMENTS Rentable:
+    ATTRIBUTES:
+        - vehicleId (String)
+        - brand (String)
+        - model (String)
+        - year (Integer)
+        - dailyRate (Double)
+        - isRented (Boolean)
+        - currentRenter (String)
+    
+    CONSTRUCTOR Vehicle(vehicleId, brand, model, year, dailyRate):
+        SET this.vehicleId = vehicleId
+        SET this.brand = brand
+        SET this.model = model
+        SET this.year = year
+        SET this.dailyRate = dailyRate
+        SET isRented = false
+        SET currentRenter = null
+    
+    ABSTRACT METHOD getVehicleType(): String
+    ABSTRACT METHOD getSpecialFeatures(): String
+    
+    METHOD isAvailable():
+        RETURN NOT isRented
+    
+    METHOD rent(customerName, days):
+        IF isAvailable():
+            SET isRented = true
+            SET currentRenter = customerName
+            PRINT "Rented " + getVehicleType() + " " + brand + " " + model + " to " + customerName
+            RETURN true
+        ELSE:
+            PRINT "Vehicle not available"
+            RETURN false
+    
+    METHOD returnVehicle():
+        IF isRented:
+            PRINT currentRenter + " returned " + getVehicleType() + " " + brand + " " + model
+            SET isRented = false
+            SET currentRenter = null
+            RETURN true
+        ELSE:
+            PRINT "Vehicle was not rented"
+            RETURN false
+    
+    METHOD getVehicleInfo():
+        RETURN getVehicleType() + ": " + brand + " " + model + " (" + year + ") - $" + dailyRate + "/day"
+
+CLASS Car EXTENDS Vehicle:
+    ATTRIBUTES:
+        - seatingCapacity (Integer)
+        - fuelType (String)
+    
+    CONSTRUCTOR Car(vehicleId, brand, model, year, dailyRate, seatingCapacity, fuelType):
+        CALL super(vehicleId, brand, model, year, dailyRate)
+        SET this.seatingCapacity = seatingCapacity
+        SET this.fuelType = fuelType
+    
+    METHOD getVehicleType():
+        RETURN "Car"
+    
+    METHOD getSpecialFeatures():
+        RETURN "Seating: " + seatingCapacity + ", Fuel: " + fuelType
+    
+    METHOD calculateRentalCost(days):
+        SET baseCost = dailyRate * days
+        IF seatingCapacity > 5:
+            SET baseCost *= 1.2 // 20% premium for larger cars
+        RETURN baseCost
+
+CLASS Motorcycle EXTENDS Vehicle:
+    ATTRIBUTES:
+        - engineCapacity (Integer)
+        - hasHelmet (Boolean)
+    
+    CONSTRUCTOR Motorcycle(vehicleId, brand, model, year, dailyRate, engineCapacity):
+        CALL super(vehicleId, brand, model, year, dailyRate)
+        SET this.engineCapacity = engineCapacity
+        SET hasHelmet = true
+    
+    METHOD getVehicleType():
+        RETURN "Motorcycle"
+    
+    METHOD getSpecialFeatures():
+        RETURN "Engine: " + engineCapacity + "cc, Helmet included: " + hasHelmet
+    
+    METHOD calculateRentalCost(days):
+        SET baseCost = dailyRate * days
+        IF days > 7:
+            SET baseCost *= 0.9 // 10% discount for weekly rentals
+        RETURN baseCost
+
+CLASS Truck EXTENDS Vehicle:
+    ATTRIBUTES:
+        - loadCapacity (Double) // in tons
+        - requiresLicense (Boolean)
+    
+    CONSTRUCTOR Truck(vehicleId, brand, model, year, dailyRate, loadCapacity):
+        CALL super(vehicleId, brand, model, year, dailyRate)
+        SET this.loadCapacity = loadCapacity
+        SET requiresLicense = true
+    
+    METHOD getVehicleType():
+        RETURN "Truck"
+    
+    METHOD getSpecialFeatures():
+        RETURN "Load capacity: " + loadCapacity + " tons, License required: " + requiresLicense
+    
+    METHOD calculateRentalCost(days):
+        SET baseCost = dailyRate * days
+        SET capacityMultiplier = 1 + (loadCapacity / 10) // Higher rate for larger capacity
+        RETURN baseCost * capacityMultiplier
+
+// Factory Pattern Implementation
+CLASS VehicleFactory:
+    STATIC METHOD createVehicle(type, vehicleId, brand, model, year, dailyRate, ...additionalParams):
+        SWITCH type.toUpperCase():
+            CASE "CAR":
+                SET seatingCapacity = additionalParams[0]
+                SET fuelType = additionalParams[1]
+                RETURN new Car(vehicleId, brand, model, year, dailyRate, seatingCapacity, fuelType)
+            
+            CASE "MOTORCYCLE":
+                SET engineCapacity = additionalParams[0]
+                RETURN new Motorcycle(vehicleId, brand, model, year, dailyRate, engineCapacity)
+            
+            CASE "TRUCK":
+                SET loadCapacity = additionalParams[0]
+                RETURN new Truck(vehicleId, brand, model, year, dailyRate, loadCapacity)
+            
+            DEFAULT:
+                PRINT "Unknown vehicle type: " + type
+                RETURN null
+
+CLASS RentalSystem:
+    ATTRIBUTES:
+        - vehicles (Map<String, Vehicle>)
+        - rentals (List<RentalRecord>)
+    
+    CONSTRUCTOR RentalSystem():
+        INITIALIZE vehicles as empty HashMap
+        INITIALIZE rentals as empty ArrayList
+    
+    METHOD addVehicle(vehicle):
+        PUT vehicle.vehicleId, vehicle in vehicles
+        PRINT "Added vehicle: " + vehicle.getVehicleInfo()
+    
+    METHOD rentVehicle(vehicleId, customerName, days):
+        IF vehicles contains vehicleId:
+            SET vehicle = GET vehicleId from vehicles
+            IF vehicle.rent(customerName, days):
+                SET cost = vehicle.calculateRentalCost(days)
+                CREATE rental = new RentalRecord(vehicleId, customerName, days, cost)
+                ADD rental to rentals
+                PRINT "Rental cost: $" + cost
+                RETURN true
+        PRINT "Vehicle not found or unavailable"
+        RETURN false
+    
+    METHOD returnVehicle(vehicleId):
+        IF vehicles contains vehicleId:
+            SET vehicle = GET vehicleId from vehicles
+            RETURN vehicle.returnVehicle()
+        PRINT "Vehicle not found"
+        RETURN false
+    
+    METHOD displayAvailableVehicles():
+        PRINT "Available Vehicles:"
+        FOR each vehicleId, vehicle in vehicles:
+            IF vehicle.isAvailable():
+                PRINT "  " + vehicle.getVehicleInfo()
+                PRINT "    Features: " + vehicle.getSpecialFeatures()
+    
+    METHOD generateRentalReport():
+        PRINT "=== Rental Report ==="
+        SET totalRevenue = 0.0
+        FOR each rental in rentals:
+            PRINT rental.toString()
+            SET totalRevenue += rental.cost
+        PRINT "Total Revenue: $" + totalRevenue
+
+CLASS RentalRecord:
+    ATTRIBUTES:
+        - vehicleId (String)
+        - customerName (String)
+        - days (Integer)
+        - cost (Double)
+        - rentalDate (Date)
+    
+    CONSTRUCTOR RentalRecord(vehicleId, customerName, days, cost):
+        SET this.vehicleId = vehicleId
+        SET this.customerName = customerName
+        SET this.days = days
+        SET this.cost = cost
+        SET rentalDate = getCurrentDate()
+    
+    METHOD toString():
+        RETURN "Rental: " + vehicleId + " to " + customerName + " for " + days + " days - $" + cost
+
+MAIN METHOD:
+    CREATE rentalSystem = new RentalSystem()
+    
+    PRINT "=== Vehicle Rental System ==="
+    
+    // Create vehicles using Factory Pattern
+    SET car1 = VehicleFactory.createVehicle("CAR", "C001", "Toyota", "Camry", 2022, 50.0, 5, "Petrol")
+    SET car2 = VehicleFactory.createVehicle("CAR", "C002", "BMW", "X5", 2023, 120.0, 7, "Diesel")
+    SET bike1 = VehicleFactory.createVehicle("MOTORCYCLE", "M001", "Honda", "CBR", 2021, 25.0, 600)
+    SET truck1 = VehicleFactory.createVehicle("TRUCK", "T001", "Ford", "F-150", 2020, 80.0, 2.5)
+    
+    // Add vehicles to system
+    CALL rentalSystem.addVehicle(car1)
+    CALL rentalSystem.addVehicle(car2)
+    CALL rentalSystem.addVehicle(bike1)
+    CALL rentalSystem.addVehicle(truck1)
+    
+    PRINT newline
+    CALL rentalSystem.displayAvailableVehicles()
+    
+    PRINT newline
+    // Rent vehicles
+    CALL rentalSystem.rentVehicle("C001", "John Doe", 3)
+    CALL rentalSystem.rentVehicle("M001", "Jane Smith", 10)
+    CALL rentalSystem.rentVehicle("T001", "Bob Johnson", 5)
+    
+    PRINT newline
+    CALL rentalSystem.displayAvailableVehicles()
+    
+    PRINT newline
+    // Return vehicles
+    CALL rentalSystem.returnVehicle("C001")
+    
+    PRINT newline
+    CALL rentalSystem.generateRentalReport()

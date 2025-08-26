@@ -1,0 +1,258 @@
+PSEUDOCODE: Flight Price Analyzer
+
+CLASS Flight:
+    ATTRIBUTES:
+        - flightNumber (String)
+        - airline (String)
+        - origin (String)
+        - destination (String)
+        - price (Double)
+        - duration (Integer) // in minutes
+        - departureTime (Time)
+        - arrivalTime (Time)
+    
+    CONSTRUCTOR Flight(flightNumber, airline, origin, destination, price, duration, departureTime, arrivalTime):
+        SET this.flightNumber = flightNumber
+        SET this.airline = airline
+        SET this.origin = origin
+        SET this.destination = destination
+        SET this.price = price
+        SET this.duration = duration
+        SET this.departureTime = departureTime
+        SET this.arrivalTime = arrivalTime
+    
+    METHOD toString():
+        SET hours = duration / 60
+        SET minutes = duration % 60
+        RETURN flightNumber + " (" + airline + ") | " + origin + " → " + destination + 
+               " | $" + price + " | " + hours + "h " + minutes + "m"
+
+CLASS FlightComparator IMPLEMENTS Comparator<Flight>:
+    ATTRIBUTES:
+        - sortBy (String) // "PRICE", "DURATION", "PRICE_DURATION"
+    
+    CONSTRUCTOR FlightComparator(sortBy):
+        SET this.sortBy = sortBy
+    
+    METHOD compare(flight1, flight2):
+        SWITCH sortBy:
+            CASE "PRICE":
+                RETURN Double.compare(flight1.price, flight2.price)
+            
+            CASE "DURATION":
+                RETURN Integer.compare(flight1.duration, flight2.duration)
+            
+            CASE "PRICE_DURATION":
+                // First compare by price, then by duration if prices are equal
+                SET priceComparison = Double.compare(flight1.price, flight2.price)
+                IF priceComparison != 0:
+                    RETURN priceComparison
+                ELSE:
+                    RETURN Integer.compare(flight1.duration, flight2.duration)
+            
+            DEFAULT:
+                RETURN 0
+
+CLASS MergeSort:
+    STATIC METHOD mergeSort(flights, comparator):
+        IF flights.length <= 1:
+            RETURN flights
+        
+        SET mid = flights.length / 2
+        SET left = COPY flights[0 to mid-1]
+        SET right = COPY flights[mid to flights.length-1]
+        
+        SET sortedLeft = mergeSort(left, comparator)
+        SET sortedRight = mergeSort(right, comparator)
+        
+        RETURN merge(sortedLeft, sortedRight, comparator)
+    
+    STATIC METHOD merge(left, right, comparator):
+        CREATE result as empty array
+        SET i = 0, j = 0
+        
+        WHILE i < left.length AND j < right.length:
+            IF comparator.compare(left[i], right[j]) <= 0:
+                ADD left[i] to result
+                INCREMENT i
+            ELSE:
+                ADD right[j] to result
+                INCREMENT j
+        
+        // Add remaining elements
+        WHILE i < left.length:
+            ADD left[i] to result
+            INCREMENT i
+        
+        WHILE j < right.length:
+            ADD right[j] to result
+            INCREMENT j
+        
+        RETURN result
+
+CLASS FlightPriceAnalyzer:
+    ATTRIBUTES:
+        - flights (List<Flight>)
+    
+    CONSTRUCTOR FlightPriceAnalyzer():
+        INITIALIZE flights as empty list
+    
+    METHOD addFlight(flight):
+        ADD flight to flights
+        PRINT "Added flight: " + flight.toString()
+    
+    METHOD sortFlightsByPrice():
+        PRINT "=== Flights Sorted by Price ===")
+        SET priceComparator = new FlightComparator("PRICE")
+        SET sortedFlights = MergeSort.mergeSort(flights.toArray(), priceComparator)
+        
+        FOR each flight in sortedFlights:
+            PRINT flight.toString()
+        
+        RETURN sortedFlights
+    
+    METHOD sortFlightsByDuration():
+        PRINT "=== Flights Sorted by Duration ==="
+        SET durationComparator = new FlightComparator("DURATION")
+        SET sortedFlights = MergeSort.mergeSort(flights.toArray(), durationComparator)
+        
+        FOR each flight in sortedFlights:
+            PRINT flight.toString()
+        
+        RETURN sortedFlights
+    
+    METHOD sortFlightsByPriceAndDuration():
+        PRINT "=== Flights Sorted by Price, then Duration ==="
+        SET combinedComparator = new FlightComparator("PRICE_DURATION")
+        SET sortedFlights = MergeSort.mergeSort(flights.toArray(), combinedComparator)
+        
+        FOR each flight in sortedFlights:
+            PRINT flight.toString()
+        
+        RETURN sortedFlights
+    
+    METHOD findCheapestFlight():
+        IF flights is empty:
+            RETURN null
+        
+        SET cheapest = flights[0]
+        FOR each flight in flights:
+            IF flight.price < cheapest.price:
+                SET cheapest = flight
+        
+        PRINT "Cheapest Flight: " + cheapest.toString()
+        RETURN cheapest
+    
+    METHOD findShortestFlight():
+        IF flights is empty:
+            RETURN null
+        
+        SET shortest = flights[0]
+        FOR each flight in flights:
+            IF flight.duration < shortest.duration:
+                SET shortest = flight
+        
+        PRINT "Shortest Flight: " + shortest.toString()
+        RETURN shortest
+    
+    METHOD findFlightsByPriceRange(minPrice, maxPrice):
+        PRINT "Flights in price range $" + minPrice + " - $" + maxPrice + ":"
+        CREATE filteredFlights as empty list
+        
+        FOR each flight in flights:
+            IF flight.price >= minPrice AND flight.price <= maxPrice:
+                ADD flight to filteredFlights
+                PRINT "  " + flight.toString()
+        
+        RETURN filteredFlights
+    
+    METHOD findFlightsByDurationRange(maxDuration):
+        PRINT "Flights under " + (maxDuration/60) + " hours:"
+        CREATE filteredFlights as empty list
+        
+        FOR each flight in flights:
+            IF flight.duration <= maxDuration:
+                ADD flight to filteredFlights
+                PRINT "  " + flight.toString()
+        
+        RETURN filteredFlights
+    
+    METHOD generateAnalysisReport():
+        PRINT "=== Flight Analysis Report ==="
+        PRINT "Total flights: " + flights.size()
+        
+        IF flights is empty:
+            PRINT "No flights to analyze"
+            RETURN
+        
+        // Calculate statistics
+        SET totalPrice = 0.0
+        SET totalDuration = 0
+        SET minPrice = flights[0].price
+        SET maxPrice = flights[0].price
+        SET minDuration = flights[0].duration
+        SET maxDuration = flights[0].duration
+        
+        FOR each flight in flights:
+            SET totalPrice += flight.price
+            SET totalDuration += flight.duration
+            
+            IF flight.price < minPrice:
+                SET minPrice = flight.price
+            IF flight.price > maxPrice:
+                SET maxPrice = flight.price
+            IF flight.duration < minDuration:
+                SET minDuration = flight.duration
+            IF flight.duration > maxDuration:
+                SET maxDuration = flight.duration
+        
+        SET avgPrice = totalPrice / flights.size()
+        SET avgDuration = totalDuration / flights.size()
+        
+        PRINT "Price Range: $" + minPrice + " - $" + maxPrice
+        PRINT "Average Price: $" + String.format("%.2f", avgPrice)
+        PRINT "Duration Range: " + (minDuration/60) + "h - " + (maxDuration/60) + "h"
+        PRINT "Average Duration: " + String.format("%.1f", avgDuration/60) + " hours"
+    
+    METHOD displayAllFlights():
+        PRINT "All Available Flights:"
+        FOR each flight in flights:
+            PRINT "  " + flight.toString()
+
+MAIN METHOD:
+    CREATE analyzer = new FlightPriceAnalyzer()
+    
+    PRINT "=== Flight Price Analyzer ==="
+    
+    // Add sample flights
+    CALL analyzer.addFlight(Flight("AA101", "American Airlines", "NYC", "LAX", 350.0, 360, "08:00", "14:00"))
+    CALL analyzer.addFlight(Flight("DL205", "Delta", "NYC", "LAX", 320.0, 380, "10:30", "16:50"))
+    CALL analyzer.addFlight(Flight("UA301", "United", "NYC", "LAX", 280.0, 420, "06:15", "12:35"))
+    CALL analyzer.addFlight(Flight("SW150", "Southwest", "NYC", "LAX", 250.0, 450, "14:20", "21:50"))
+    CALL analyzer.addFlight(Flight("JB200", "JetBlue", "NYC", "LAX", 290.0, 390, "12:00", "18:30"))
+    CALL analyzer.addFlight(Flight("AA505", "American Airlines", "NYC", "LAX", 380.0, 340, "16:45", "22:25"))
+    
+    PRINT newline
+    CALL analyzer.displayAllFlights()
+    
+    PRINT newline
+    CALL analyzer.sortFlightsByPrice()
+    
+    PRINT newline
+    CALL analyzer.sortFlightsByDuration()
+    
+    PRINT newline
+    CALL analyzer.sortFlightsByPriceAndDuration()
+    
+    PRINT newline
+    CALL analyzer.findCheapestFlight()
+    CALL analyzer.findShortestFlight()
+    
+    PRINT newline
+    CALL analyzer.findFlightsByPriceRange(250.0, 300.0)
+    
+    PRINT newline
+    CALL analyzer.findFlightsByDurationRange(400) // Under 400 minutes
+    
+    PRINT newline
+    CALL analyzer.generateAnalysisReport()

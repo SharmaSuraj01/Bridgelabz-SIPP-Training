@@ -1,0 +1,286 @@
+PSEUDOCODE: College Course Registration
+
+CLASS Student:
+    ATTRIBUTES:
+        - studentId (String)
+        - name (String)
+        - email (String)
+        - year (Integer)
+        - major (String)
+        - gpa (Double)
+    
+    CONSTRUCTOR Student(studentId, name, email, year, major, gpa):
+        SET this.studentId = studentId
+        SET this.name = name
+        SET this.email = email
+        SET this.year = year
+        SET this.major = major
+        SET this.gpa = gpa
+    
+    METHOD toString():
+        RETURN studentId + ": " + name + " (" + major + ", Year " + year + ") - GPA: " + gpa
+
+CLASS Course:
+    ATTRIBUTES:
+        - courseId (String)
+        - courseName (String)
+        - instructor (String)
+        - credits (Integer)
+        - maxCapacity (Integer)
+        - prerequisites (List<String>)
+        - schedule (String)
+    
+    CONSTRUCTOR Course(courseId, courseName, instructor, credits, maxCapacity, schedule):
+        SET this.courseId = courseId
+        SET this.courseName = courseName
+        SET this.instructor = instructor
+        SET this.credits = credits
+        SET this.maxCapacity = maxCapacity
+        SET this.schedule = schedule
+        INITIALIZE prerequisites as empty list
+    
+    METHOD addPrerequisite(courseId):
+        ADD courseId to prerequisites
+    
+    METHOD toString():
+        RETURN courseId + ": " + courseName + " (" + instructor + ") - " + credits + " credits | " + schedule
+
+CLASS CourseRegistrationSystem:
+    ATTRIBUTES:
+        - courseStudentMap (Map<Course, List<Student>>) // Multimap-like structure
+        - students (Map<String, Student>)
+        - courses (Map<String, Course>)
+        - studentCourseMap (Map<String, List<Course>>) // Student ID to enrolled courses
+    
+    CONSTRUCTOR CourseRegistrationSystem():
+        INITIALIZE courseStudentMap as empty HashMap
+        INITIALIZE students as empty HashMap
+        INITIALIZE courses as empty HashMap
+        INITIALIZE studentCourseMap as empty HashMap
+    
+    METHOD addStudent(student):
+        PUT student.studentId, student in students
+        PUT student.studentId, new ArrayList<Course> in studentCourseMap
+        PRINT "Added student: " + student.toString()
+    
+    METHOD addCourse(course):
+        PUT course.courseId, course in courses
+        PUT course, new ArrayList<Student> in courseStudentMap
+        PRINT "Added course: " + course.toString()
+    
+    METHOD registerStudentForCourse(studentId, courseId):
+        IF NOT students.contains(studentId):
+            PRINT "Student not found: " + studentId
+            RETURN false
+        
+        IF NOT courses.contains(courseId):
+            PRINT "Course not found: " + courseId
+            RETURN false
+        
+        SET student = GET studentId from students
+        SET course = GET courseId from courses
+        SET enrolledStudents = GET course from courseStudentMap
+        
+        // Check if already registered
+        IF enrolledStudents.contains(student):
+            PRINT student.name + " is already registered for " + course.courseName
+            RETURN false
+        
+        // Check capacity
+        IF enrolledStudents.size() >= course.maxCapacity:
+            PRINT "Course " + course.courseName + " is full (capacity: " + course.maxCapacity + ")"
+            RETURN false
+        
+        // Check prerequisites
+        IF NOT checkPrerequisites(student, course):
+            PRINT "Prerequisites not met for " + course.courseName
+            RETURN false
+        
+        // Register student
+        ADD student to enrolledStudents
+        GET studentCourseMap[studentId].add(course)
+        
+        PRINT "Successfully registered " + student.name + " for " + course.courseName
+        RETURN true
+    
+    METHOD checkPrerequisites(student, course):
+        SET studentCourses = GET student.studentId from studentCourseMap
+        
+        FOR each prerequisiteId in course.prerequisites:
+            SET hasPrerequisite = false
+            FOR each enrolledCourse in studentCourses:
+                IF enrolledCourse.courseId equals prerequisiteId:
+                    SET hasPrerequisite = true
+                    BREAK
+            
+            IF NOT hasPrerequisite:
+                PRINT "Missing prerequisite: " + prerequisiteId
+                RETURN false
+        
+        RETURN true
+    
+    METHOD dropStudentFromCourse(studentId, courseId):
+        IF NOT students.contains(studentId) OR NOT courses.contains(courseId):
+            PRINT "Student or course not found"
+            RETURN false
+        
+        SET student = GET studentId from students
+        SET course = GET courseId from courses
+        SET enrolledStudents = GET course from courseStudentMap
+        
+        IF enrolledStudents.contains(student):
+            REMOVE student from enrolledStudents
+            GET studentCourseMap[studentId].remove(course)
+            PRINT student.name + " dropped from " + course.courseName
+            RETURN true
+        ELSE:
+            PRINT student.name + " is not registered for " + course.courseName
+            RETURN false
+    
+    METHOD displayStudentsPerCourse():
+        PRINT "=== Students per Course ==="
+        
+        FOR each course, studentList in courseStudentMap:
+            PRINT course.courseName + " (" + course.courseId + "):"
+            PRINT "  Instructor: " + course.instructor
+            PRINT "  Enrolled: " + studentList.size() + "/" + course.maxCapacity
+            
+            IF studentList.size() > 0:
+                PRINT "  Students:"
+                FOR each student in studentList:
+                    PRINT "    " + student.toString()
+            ELSE:
+                PRINT "  No students enrolled"
+            PRINT newline
+    
+    METHOD displayStudentSchedule(studentId):
+        IF NOT students.contains(studentId):
+            PRINT "Student not found"
+            RETURN
+        
+        SET student = GET studentId from students
+        SET enrolledCourses = GET studentId from studentCourseMap
+        
+        PRINT "Schedule for " + student.name + " (" + studentId + "):"
+        IF enrolledCourses.size() > 0:
+            SET totalCredits = 0
+            FOR each course in enrolledCourses:
+                PRINT "  " + course.toString()
+                SET totalCredits += course.credits
+            PRINT "Total Credits: " + totalCredits
+        ELSE:
+            PRINT "  No courses registered"
+    
+    METHOD findCoursesByInstructor(instructorName):
+        PRINT "Courses taught by " + instructorName + ":"
+        
+        FOR each courseId, course in courses:
+            IF course.instructor.toLowerCase().contains(instructorName.toLowerCase()):
+                SET enrolledCount = GET course from courseStudentMap.size()
+                PRINT "  " + course.toString() + " | Enrolled: " + enrolledCount + "/" + course.maxCapacity
+    
+    METHOD findStudentsByYear(year):
+        PRINT "Students in year " + year + ":"
+        
+        FOR each studentId, student in students:
+            IF student.year == year:
+                SET courseCount = GET studentId from studentCourseMap.size()
+                PRINT "  " + student.toString() + " | Courses: " + courseCount
+    
+    METHOD findStudentsByMajor(major):
+        PRINT "Students majoring in " + major + ":"
+        
+        FOR each studentId, student in students:
+            IF student.major.equalsIgnoreCase(major):
+                SET courseCount = GET studentId from studentCourseMap.size()
+                PRINT "  " + student.toString() + " | Courses: " + courseCount
+    
+    METHOD generateEnrollmentReport():
+        PRINT "=== Enrollment Report ==="
+        
+        SET totalStudents = students.size()
+        SET totalCourses = courses.size()
+        SET totalEnrollments = 0
+        SET fullCourses = 0
+        
+        FOR each course, studentList in courseStudentMap:
+            SET totalEnrollments += studentList.size()
+            IF studentList.size() >= course.maxCapacity:
+                INCREMENT fullCourses
+        
+        PRINT "Total Students: " + totalStudents
+        PRINT "Total Courses: " + totalCourses
+        PRINT "Total Enrollments: " + totalEnrollments
+        PRINT "Full Courses: " + fullCourses
+        PRINT "Average Enrollments per Course: " + String.format("%.1f", totalEnrollments * 1.0 / totalCourses)
+        
+        // Find most popular course
+        SET mostPopularCourse = null
+        SET maxEnrollment = 0
+        
+        FOR each course, studentList in courseStudentMap:
+            IF studentList.size() > maxEnrollment:
+                SET maxEnrollment = studentList.size()
+                SET mostPopularCourse = course
+        
+        IF mostPopularCourse is not null:
+            PRINT "Most Popular Course: " + mostPopularCourse.courseName + " (" + maxEnrollment + " students)"
+
+MAIN METHOD:
+    CREATE registrationSystem = new CourseRegistrationSystem()
+    
+    PRINT "=== College Course Registration System ==="
+    
+    // Add students
+    CALL registrationSystem.addStudent(Student("S001", "Alice Johnson", "alice@college.edu", 2, "Computer Science", 3.8))
+    CALL registrationSystem.addStudent(Student("S002", "Bob Smith", "bob@college.edu", 3, "Mathematics", 3.6))
+    CALL registrationSystem.addStudent(Student("S003", "Carol Davis", "carol@college.edu", 1, "Computer Science", 3.9))
+    CALL registrationSystem.addStudent(Student("S004", "David Wilson", "david@college.edu", 2, "Physics", 3.4))
+    CALL registrationSystem.addStudent(Student("S005", "Eva Brown", "eva@college.edu", 4, "Computer Science", 3.7))
+    
+    // Add courses
+    SET cs101 = Course("CS101", "Introduction to Programming", "Dr. Anderson", 3, 25, "MWF 9:00-10:00")
+    SET cs201 = Course("CS201", "Data Structures", "Dr. Johnson", 4, 20, "TTh 11:00-12:30")
+    SET cs301 = Course("CS301", "Algorithms", "Dr. Smith", 4, 15, "MWF 2:00-3:00")
+    SET math201 = Course("MATH201", "Calculus II", "Dr. Wilson", 4, 30, "MWF 10:00-11:00")
+    SET phys101 = Course("PHYS101", "General Physics", "Dr. Davis", 3, 25, "TTh 1:00-2:30")
+    
+    // Set prerequisites
+    CALL cs201.addPrerequisite("CS101")
+    CALL cs301.addPrerequisite("CS201")
+    
+    CALL registrationSystem.addCourse(cs101)
+    CALL registrationSystem.addCourse(cs201)
+    CALL registrationSystem.addCourse(cs301)
+    CALL registrationSystem.addCourse(math201)
+    CALL registrationSystem.addCourse(phys101)
+    
+    PRINT newline
+    
+    // Register students for courses
+    CALL registrationSystem.registerStudentForCourse("S001", "CS101")
+    CALL registrationSystem.registerStudentForCourse("S001", "MATH201")
+    CALL registrationSystem.registerStudentForCourse("S002", "MATH201")
+    CALL registrationSystem.registerStudentForCourse("S002", "PHYS101")
+    CALL registrationSystem.registerStudentForCourse("S003", "CS101")
+    CALL registrationSystem.registerStudentForCourse("S004", "PHYS101")
+    CALL registrationSystem.registerStudentForCourse("S005", "CS201") // Should fail - no CS101
+    
+    // Register for advanced course after prerequisite
+    CALL registrationSystem.registerStudentForCourse("S001", "CS201") // Should work after CS101
+    
+    PRINT newline
+    CALL registrationSystem.displayStudentsPerCourse()
+    
+    PRINT newline
+    CALL registrationSystem.displayStudentSchedule("S001")
+    CALL registrationSystem.displayStudentSchedule("S002")
+    
+    PRINT newline
+    CALL registrationSystem.findCoursesByInstructor("Dr. Johnson")
+    
+    PRINT newline
+    CALL registrationSystem.findStudentsByMajor("Computer Science")
+    
+    PRINT newline
+    CALL registrationSystem.generateEnrollmentReport()

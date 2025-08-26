@@ -1,0 +1,241 @@
+PSEUDOCODE: Crime Prediction Heatmap
+
+CLASS CityZone:
+    ATTRIBUTES:
+        - zoneId (String)
+        - zoneName (String)
+        - crimeCount (Integer)
+        - population (Integer)
+        - riskLevel (String) // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+        - coordinates (Pair<Double, Double>) // latitude, longitude
+        - adjacentZones (List<String>) // Connected zone IDs
+    
+    CONSTRUCTOR CityZone(zoneId, zoneName, crimeCount, population, coordinates):
+        SET this.zoneId = zoneId
+        SET this.zoneName = zoneName
+        SET this.crimeCount = crimeCount
+        SET this.population = population
+        SET this.coordinates = coordinates
+        INITIALIZE adjacentZones as empty list
+        CALL calculateRiskLevel()
+    
+    METHOD calculateRiskLevel():
+        SET crimeRate = (crimeCount * 1000.0) / population // Crimes per 1000 people
+        
+        IF crimeRate >= 50:
+            SET riskLevel = "CRITICAL"
+        ELSE IF crimeRate >= 30:
+            SET riskLevel = "HIGH"
+        ELSE IF crimeRate >= 15:
+            SET riskLevel = "MEDIUM"
+        ELSE:
+            SET riskLevel = "LOW"
+    
+    METHOD addAdjacentZone(zoneId):
+        IF NOT adjacentZones.contains(zoneId):
+            ADD zoneId to adjacentZones
+    
+    METHOD toString():
+        RETURN zoneId + ": " + zoneName + " | Crimes: " + crimeCount + 
+               " | Population: " + population + " | Risk: " + riskLevel
+
+CLASS CityGraph:
+    ATTRIBUTES:
+        - zones (Map<String, CityZone>)
+        - visited (Set<String>) // For DFS traversal
+    
+    CONSTRUCTOR CityGraph():
+        INITIALIZE zones as empty HashMap
+        INITIALIZE visited as empty HashSet
+    
+    METHOD addZone(zone):
+        PUT zone.zoneId, zone in zones
+        PRINT "Added zone: " + zone.toString()
+    
+    METHOD addConnection(zoneId1, zoneId2):
+        IF zones contains zoneId1 AND zones contains zoneId2:
+            GET zones[zoneId1].addAdjacentZone(zoneId2)
+            GET zones[zoneId2].addAdjacentZone(zoneId1)
+            PRINT "Connected zones: " + zoneId1 + " ↔ " + zoneId2
+        ELSE:
+            PRINT "One or both zones not found"
+    
+    METHOD findHighRiskAreas():
+        PRINT "=== High Risk Area Analysis using DFS ==="
+        CLEAR visited set
+        CREATE highRiskClusters as empty list
+        
+        FOR each zoneId, zone in zones:
+            IF NOT visited.contains(zoneId) AND (zone.riskLevel equals "HIGH" OR zone.riskLevel equals "CRITICAL"):
+                CREATE cluster = new ArrayList<CityZone>
+                CALL dfsHighRiskTraversal(zoneId, cluster)
+                IF cluster.size() > 0:
+                    ADD cluster to highRiskClusters
+        
+        PRINT "Found " + highRiskClusters.size() + " high-risk clusters:"
+        FOR i = 0 to highRiskClusters.size()-1:
+            PRINT "Cluster " + (i+1) + ":")
+            FOR each zone in highRiskClusters[i]:
+                PRINT "  " + zone.toString()
+        
+        RETURN highRiskClusters
+    
+    METHOD dfsHighRiskTraversal(zoneId, cluster):
+        IF visited.contains(zoneId):
+            RETURN
+        
+        ADD zoneId to visited
+        SET zone = GET zoneId from zones
+        
+        IF zone.riskLevel equals "HIGH" OR zone.riskLevel equals "CRITICAL":
+            ADD zone to cluster
+            PRINT "DFS visiting high-risk zone: " + zone.zoneName
+            
+            // Recursively visit adjacent zones
+            FOR each adjacentZoneId in zone.adjacentZones:
+                CALL dfsHighRiskTraversal(adjacentZoneId, cluster)
+    
+    METHOD findConnectedRiskAreas(startZoneId):
+        PRINT "=== Connected Risk Areas from " + startZoneId + " ==="
+        CLEAR visited set
+        CREATE connectedAreas as empty list
+        
+        IF zones contains startZoneId:
+            CALL dfsConnectedRiskTraversal(startZoneId, connectedAreas)
+            
+            PRINT "Connected risk areas from " + startZoneId + ":")
+            FOR each zone in connectedAreas:
+                PRINT "  " + zone.toString()
+        
+        RETURN connectedAreas
+    
+    METHOD dfsConnectedRiskTraversal(zoneId, connectedAreas):
+        IF visited.contains(zoneId):
+            RETURN
+        
+        ADD zoneId to visited
+        SET zone = GET zoneId from zones
+        ADD zone to connectedAreas
+        
+        PRINT "DFS visiting: " + zone.zoneName + " (Risk: " + zone.riskLevel + ")"
+        
+        // Visit adjacent zones
+        FOR each adjacentZoneId in zone.adjacentZones:
+            CALL dfsConnectedRiskTraversal(adjacentZoneId, connectedAreas)
+    
+    METHOD generateHeatmap():
+        PRINT "=== Crime Heatmap ==="
+        
+        // Group zones by risk level
+        CREATE riskGroups as Map<String, List<CityZone>>
+        PUT "CRITICAL", new ArrayList<CityZone> in riskGroups
+        PUT "HIGH", new ArrayList<CityZone> in riskGroups
+        PUT "MEDIUM", new ArrayList<CityZone> in riskGroups
+        PUT "LOW", new ArrayList<CityZone> in riskGroups
+        
+        FOR each zoneId, zone in zones:
+            GET riskGroups[zone.riskLevel].add(zone)
+        
+        // Display heatmap
+        FOR each riskLevel in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
+            SET zoneList = GET riskLevel from riskGroups
+            IF zoneList.size() > 0:
+                PRINT riskLevel + " RISK ZONES (" + zoneList.size() + "):"
+                FOR each zone in zoneList:
+                    SET crimeRate = (zone.crimeCount * 1000.0) / zone.population
+                    PRINT "  " + zone.zoneName + " - " + String.format("%.1f", crimeRate) + " crimes/1000 people"
+    
+    METHOD predictSpreadRisk(sourceZoneId, maxDepth):
+        PRINT "=== Risk Spread Prediction from " + sourceZoneId + " ==="
+        CLEAR visited set
+        CREATE riskSpread as Map<Integer, List<String>>
+        
+        IF zones contains sourceZoneId:
+            CALL dfsRiskSpread(sourceZoneId, 0, maxDepth, riskSpread)
+            
+            FOR depth = 0 to maxDepth:
+                IF riskSpread contains depth:
+                    PRINT "Depth " + depth + " zones:"
+                    FOR each zoneId in riskSpread[depth]:
+                        SET zone = GET zoneId from zones
+                        PRINT "  " + zone.zoneName + " (Risk: " + zone.riskLevel + ")"
+    
+    METHOD dfsRiskSpread(zoneId, currentDepth, maxDepth, riskSpread):
+        IF visited.contains(zoneId) OR currentDepth > maxDepth:
+            RETURN
+        
+        ADD zoneId to visited
+        
+        IF NOT riskSpread.contains(currentDepth):
+            PUT currentDepth, new ArrayList<String> in riskSpread
+        GET riskSpread[currentDepth].add(zoneId)
+        
+        SET zone = GET zoneId from zones
+        FOR each adjacentZoneId in zone.adjacentZones:
+            CALL dfsRiskSpread(adjacentZoneId, currentDepth + 1, maxDepth, riskSpread)
+    
+    METHOD generateStatistics():
+        PRINT "=== Crime Statistics ==="
+        SET totalCrimes = 0
+        SET totalPopulation = 0
+        SET criticalZones = 0
+        SET highRiskZones = 0
+        
+        FOR each zoneId, zone in zones:
+            SET totalCrimes += zone.crimeCount
+            SET totalPopulation += zone.population
+            
+            IF zone.riskLevel equals "CRITICAL":
+                INCREMENT criticalZones
+            ELSE IF zone.riskLevel equals "HIGH":
+                INCREMENT highRiskZones
+        
+        SET overallCrimeRate = (totalCrimes * 1000.0) / totalPopulation
+        
+        PRINT "Total zones: " + zones.size()
+        PRINT "Total crimes: " + totalCrimes
+        PRINT "Total population: " + totalPopulation
+        PRINT "Overall crime rate: " + String.format("%.2f", overallCrimeRate) + " per 1000 people"
+        PRINT "Critical risk zones: " + criticalZones
+        PRINT "High risk zones: " + highRiskZones
+        PRINT "High-risk percentage: " + String.format("%.1f", ((criticalZones + highRiskZones) * 100.0) / zones.size()) + "%"
+
+MAIN METHOD:
+    CREATE cityGraph = new CityGraph()
+    
+    PRINT "=== Crime Prediction Heatmap System ==="
+    
+    // Create city zones with crime data
+    CALL cityGraph.addZone(CityZone("Z001", "Downtown", 120, 5000, Pair(40.7128, -74.0060)))
+    CALL cityGraph.addZone(CityZone("Z002", "Industrial Area", 85, 3000, Pair(40.7589, -73.9851)))
+    CALL cityGraph.addZone(CityZone("Z003", "Residential North", 25, 8000, Pair(40.7831, -73.9712)))
+    CALL cityGraph.addZone(CityZone("Z004", "Commercial District", 95, 4500, Pair(40.7505, -73.9934)))
+    CALL cityGraph.addZone(CityZone("Z005", "Suburbs East", 15, 6000, Pair(40.7282, -73.7949)))
+    CALL cityGraph.addZone(CityZone("Z006", "Port Area", 150, 2500, Pair(40.6892, -74.0445)))
+    CALL cityGraph.addZone(CityZone("Z007", "University District", 40, 7500, Pair(40.8176, -73.9782)))
+    CALL cityGraph.addZone(CityZone("Z008", "Old Town", 75, 3500, Pair(40.7061, -74.0087)))
+    
+    // Add connections between adjacent zones
+    CALL cityGraph.addConnection("Z001", "Z002") // Downtown ↔ Industrial
+    CALL cityGraph.addConnection("Z001", "Z004") // Downtown ↔ Commercial
+    CALL cityGraph.addConnection("Z001", "Z008") // Downtown ↔ Old Town
+    CALL cityGraph.addConnection("Z002", "Z003") // Industrial ↔ Residential North
+    CALL cityGraph.addConnection("Z002", "Z006") // Industrial ↔ Port Area
+    CALL cityGraph.addConnection("Z003", "Z007") // Residential North ↔ University
+    CALL cityGraph.addConnection("Z004", "Z005") // Commercial ↔ Suburbs East
+    CALL cityGraph.addConnection("Z006", "Z008") // Port Area ↔ Old Town
+    
+    PRINT newline
+    CALL cityGraph.generateHeatmap()
+    
+    PRINT newline
+    CALL cityGraph.findHighRiskAreas()
+    
+    PRINT newline
+    CALL cityGraph.findConnectedRiskAreas("Z001")
+    
+    PRINT newline
+    CALL cityGraph.predictSpreadRisk("Z006", 3)
+    
+    PRINT newline
+    CALL cityGraph.generateStatistics()
