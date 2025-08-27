@@ -1,0 +1,56 @@
+PSEUDOCODE: Online Exam Portal
+
+CLASS User:
+    ATTRIBUTES:
+        - username (String)
+        - password (String)
+    
+    CONSTRUCTOR User(username, password):
+        SET this.username = username
+        SET this.password = password
+    
+    METHOD login():
+        PRINT "Basic login for: " + username
+        RETURN true
+
+CLASS Student EXTENDS User:
+    ATTRIBUTES:
+        - isRegistered (Boolean)
+        - isEnrolled (Boolean)
+    
+    CONSTRUCTOR Student(username, password, isRegistered, isEnrolled):
+        CALL super(username, password)
+        SET this.isRegistered = isRegistered
+        SET this.isEnrolled = isEnrolled
+    
+    METHOD login():
+        IF NOT isRegistered:
+            PRINT "Access denied: Student not registered"
+            RETURN false
+        IF NOT isEnrolled:
+            PRINT "Access denied: Student not enrolled in course"
+            RETURN false
+        PRINT "Student " + username + " logged in. Available exams displayed"
+        RETURN true
+
+CLASS Admin EXTENDS User:
+    ATTRIBUTES:
+        - hasAdminPrivileges (Boolean)
+    
+    CONSTRUCTOR Admin(username, password, hasAdminPrivileges):
+        CALL super(username, password)
+        SET this.hasAdminPrivileges = hasAdminPrivileges
+    
+    METHOD login():
+        IF NOT hasAdminPrivileges:
+            PRINT "Access denied: Insufficient admin privileges"
+            RETURN false
+        PRINT "Admin " + username + " logged in. Exam management tools available"
+        RETURN true
+
+MAIN METHOD:
+    SET student = new Student("john123", "pass123", true, true)
+    SET admin = new Admin("admin001", "adminpass", true)
+    
+    CALL student.login() // Polymorphism
+    CALL admin.login()   // Polymorphism
