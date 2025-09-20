@@ -1,0 +1,154 @@
+PSEUDOCODE: Patient Record Hashing
+
+CLASS Patient:
+    ATTRIBUTES:
+        - patientId (String)
+        - name (String)
+        - age (Integer)
+        - bloodType (String)
+        - phone (String)
+        - address (String)
+        - medicalHistory (List<String>)
+    
+    CONSTRUCTOR Patient(patientId, name, age, bloodType, phone, address):
+        SET this.patientId = patientId
+        SET this.name = name
+        SET this.age = age
+        SET this.bloodType = bloodType
+        SET this.phone = phone
+        SET this.address = address
+        INITIALIZE medicalHistory as empty list
+    
+    METHOD addMedicalHistory(condition):
+        ADD condition to medicalHistory
+    
+    METHOD toString():
+        RETURN "Patient{ID: " + patientId + ", Name: " + name + ", Age: " + age + 
+               ", Blood Type: " + bloodType + ", Phone: " + phone + "}"
+
+CLASS PatientRecordSystem:
+    ATTRIBUTES:
+        - patientRecords (HashMap<String, Patient>) // Key: patientId, Value: Patient
+    
+    CONSTRUCTOR PatientRecordSystem():
+        INITIALIZE patientRecords as empty HashMap<String, Patient>
+    
+    METHOD addPatient(patient):
+        IF patientRecords contains patient.patientId:
+            PRINT "Patient with ID " + patient.patientId + " already exists"
+            RETURN false
+        ELSE:
+            PUT patient.patientId, patient in patientRecords
+            PRINT "Added patient: " + patient.name + " (ID: " + patient.patientId + ")"
+            RETURN true
+    
+    METHOD retrievePatient(patientId):
+        IF patientRecords contains patientId:
+            SET patient = GET patientId from patientRecords
+            PRINT "Retrieved: " + patient.toString()
+            RETURN patient
+        ELSE:
+            PRINT "Patient with ID " + patientId + " not found"
+            RETURN null
+    
+    METHOD updatePatient(patientId, updatedPatient):
+        IF patientRecords contains patientId:
+            PUT patientId, updatedPatient in patientRecords // Replace existing
+            PRINT "Updated patient: " + updatedPatient.name + " (ID: " + patientId + ")"
+            RETURN true
+        ELSE:
+            PRINT "Patient with ID " + patientId + " not found for update"
+            RETURN false
+    
+    METHOD deletePatient(patientId):
+        IF patientRecords contains patientId:
+            SET removedPatient = REMOVE patientId from patientRecords
+            PRINT "Deleted patient: " + removedPatient.name + " (ID: " + patientId + ")"
+            RETURN true
+        ELSE:
+            PRINT "Patient with ID " + patientId + " not found for deletion"
+            RETURN false
+    
+    METHOD searchByBloodType(bloodType):
+        CREATE matchingPatients as empty list
+        FOR each patientId, patient in patientRecords:
+            IF patient.bloodType equals bloodType:
+                ADD patient to matchingPatients
+        RETURN matchingPatients
+    
+    METHOD searchByAge(minAge, maxAge):
+        CREATE matchingPatients as empty list
+        FOR each patientId, patient in patientRecords:
+            IF patient.age >= minAge AND patient.age <= maxAge:
+                ADD patient to matchingPatients
+        RETURN matchingPatients
+    
+    METHOD displayAllPatients():
+        IF patientRecords is empty:
+            PRINT "No patients in the system"
+            RETURN
+        
+        PRINT "All Patients in System:"
+        FOR each patientId, patient in patientRecords:
+            PRINT "  " + patient.toString()
+    
+    METHOD getPatientCount():
+        RETURN patientRecords.size()
+    
+    METHOD generateReport():
+        PRINT "=== Patient Record System Report ==="
+        PRINT "Total Patients: " + getPatientCount()
+        
+        // Count by blood type
+        CREATE bloodTypeCount as HashMap<String, Integer>
+        FOR each patientId, patient in patientRecords:
+            IF bloodTypeCount contains patient.bloodType:
+                INCREMENT bloodTypeCount[patient.bloodType] by 1
+            ELSE:
+                PUT patient.bloodType, 1 in bloodTypeCount
+        
+        PRINT "Blood Type Distribution:"
+        FOR each bloodType, count in bloodTypeCount:
+            PRINT "  " + bloodType + ": " + count + " patients"
+
+MAIN METHOD:
+    CREATE system = new PatientRecordSystem()
+    
+    PRINT "=== Patient Record Hashing System ==="
+    
+    // Add patients
+    CALL system.addPatient(Patient("P001", "John Doe", 35, "O+", "123-456-7890", "123 Main St"))
+    CALL system.addPatient(Patient("P002", "Jane Smith", 28, "A+", "987-654-3210", "456 Oak Ave"))
+    CALL system.addPatient(Patient("P003", "Bob Johnson", 45, "B-", "555-123-4567", "789 Pine Rd"))
+    CALL system.addPatient(Patient("P004", "Alice Brown", 32, "O+", "111-222-3333", "321 Elm St"))
+    
+    PRINT newline
+    CALL system.displayAllPatients()
+    
+    // Retrieve patient
+    PRINT "\nRetrieving patient P002:"
+    SET patient = system.retrievePatient("P002")
+    
+    // Update patient
+    PRINT "\nUpdating patient P003:"
+    SET updatedPatient = Patient("P003", "Bob Johnson", 46, "B-", "555-123-4567", "789 Pine Rd")
+    CALL updatedPatient.addMedicalHistory("Diabetes")
+    CALL system.updatePatient("P003", updatedPatient)
+    
+    // Search operations
+    PRINT "\nPatients with O+ blood type:"
+    SET oPositivePatients = system.searchByBloodType("O+")
+    FOR each patient in oPositivePatients:
+        PRINT "  " + patient.toString()
+    
+    PRINT "\nPatients aged 30-40:"
+    SET ageRangePatients = system.searchByAge(30, 40)
+    FOR each patient in ageRangePatients:
+        PRINT "  " + patient.toString()
+    
+    // Delete patient
+    PRINT "\nDeleting patient P001:"
+    CALL system.deletePatient("P001")
+    
+    PRINT newline
+    CALL system.generateReport()
